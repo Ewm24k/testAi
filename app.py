@@ -2,7 +2,7 @@ import os
 import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import openai
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8585326191:AAGWahXKfYW_FvyLtg5g8xDU_KdkHkX8QW0')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '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')
 
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Store conversation history for each user
 user_conversations = {}
@@ -73,7 +73,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.chat.send_action(action="typing")
         
         # Get response from OpenAI
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model='gpt-3.5-turbo',
             messages=user_conversations[user_id],
             max_tokens=500
