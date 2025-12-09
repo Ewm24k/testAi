@@ -55,17 +55,51 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle incoming messages and respond using OpenAI."""
     user_id = update.effective_user.id
-    user_message = update.message.text
+    user_message = update.message.text if update.message.text else update.message.caption
     
     # Initialize conversation history if not exists
     if user_id not in user_conversations:
         user_conversations[user_id] = []
     
-    # Add user message to history
-    user_conversations[user_id].append({
-        'role': 'user',
-        'content': user_message
-    })
+    # Check if message contains a photo
+    if update.message.photo:
+        # Get the largest photo
+        photo = update.message.photo[-1]
+        photo_file = await photo.get_file()
+        photo_bytes = await photo_file.download_as_bytearray()
+        
+        # Convert to base64
+        import base64
+        photo_base64 = base64.b64encode(photo_bytes).decode('utf-8')
+        
+        # Add user message with image to history
+        message_content = [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{photo_base64}"
+                }
+            }
+        ]
+        
+        if user_message:
+            message_content.insert(0, {"type": "text", "text": user_message})
+        else:
+            message_content.insert(0, {"type": "text", "text": "What's in this image?"})
+        
+        user_conversations[user_id].append({
+            'role': 'user',
+            'content': message_content
+        })
+    else:
+        # Regular text message
+        if not user_message:
+            return
+            
+        user_conversations[user_id].append({
+            'role': 'user',
+            'content': user_message
+        })
     
     # Keep only last 10 messages to avoid token limits
     if len(user_conversations[user_id]) > 10:
@@ -128,6 +162,7 @@ def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("clear", clear_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_message))
     
     # Run the bot with webhook for Render
     PORT = int(os.environ.get('PORT', 8443))
