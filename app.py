@@ -11,9 +11,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Set API keys from environment variables or hardcoded
-TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8585326191:AAGWahXKfYW_FvyLtg5g8xDU_KdkHkX8QW0')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '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')
+# Set API keys
+TELEGRAM_TOKEN = '8585326191:AAGWahXKfYW_FvyLtg5g8xDU_KdkHkX8QW0'
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY must be set in environment variables")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
